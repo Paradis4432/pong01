@@ -190,6 +190,15 @@ void inputUpdate() {
             case SDLK_DOWN:
                 pallet1->moveDown();
                 spritesAssets[0].dest.y = pallet1->y;
+                break;
+            case SDLK_w:
+                pallet0->moveUp();
+                spritesAssets[1].dest.y = pallet0->y;
+                break;
+            case SDLK_s:
+                pallet0->moveDown();
+                spritesAssets[1].dest.y = pallet0->y;
+                break;
             default:
                 break;
             }
@@ -287,18 +296,14 @@ void monitorBall() {
         ball->resetBall();
     }
 
-    if (ball->x >= pallet1->x) {
+    if (ball->x >= pallet1->x-20) {
         int pallet1y = pallet1->y;
-        if (ball->y >= pallet1->y && ball->y <= (pallet1->y + 100))
-        {
-            cout << "hit on pallet0" << endl;
-            ball->ranBalDirLeft();
-        }
+        if (ball->y >= pallet1->y && ball->y <= (pallet1->y + 100)) ball->ranBalDirLeft();
     }
-    else {
-        cout << "pallet X: " << pallet1->x << " Y: " << pallet1->y << endl;
-        cout << "ball X: " << ball->x << " Y: " << ball->y << endl;
-        cout << endl;
+
+    if (ball->x <= pallet0->x + 20) {
+        int pallet0y = pallet0->y;
+        if (ball->y >= pallet0->y && ball->y <= (pallet0->y + 100)) ball->ranBalDirRight();
     }
 }
 
