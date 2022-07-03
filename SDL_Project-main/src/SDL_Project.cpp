@@ -1,6 +1,7 @@
 // SDL_Project.cpp : Este archivo contiene la función "main". La ejecución del programa comienza y termina ahí.
 //
 
+#include <string> 
 #include <windows.h>
 #include <iostream>
 #include <fstream>
@@ -85,10 +86,8 @@ void destroyEngine() {
     SDL_Quit();
 }
 
-///////// Funciones de inicializacion y destruccion /////////////
-
-
 ///////// Funciones de carga y liberacion de recursos /////////////
+
 
 
 void loadIMG(string path, int x, int y, int w, int h) {
@@ -117,30 +116,45 @@ void loadAssets() {
     if (ball->direction == STOP) ball->ranBallDir();
 
     // Cargo el texto...
-    //string fontfilePath = "assets/fonts/arial.ttf";
-    //
-    //TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24); //this opens a font style and sets a size
-    //
-    //SDL_Color White = { 255, 255, 255 };  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
-    //
-    //SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "Project ready...", White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-    //
-    //SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
-    //
-    //SDL_Rect Message_rect; //create a rect
-    //Message_rect.w = WIDTH * 0.65; // controls the width of the rect
-    //Message_rect.h = HEIGHT * 0.10; // controls the height of the rect
-    //Message_rect.x = (WIDTH >> 1) - (Message_rect.w >> 1);  //controls the rect's x coordinate 
-    //Message_rect.y = HEIGHT >> 1; // controls the rect's y coordinte
-    //
-    //Text mainText;
-    //mainText.font = Sans;
-    //mainText.color = White;
-    //mainText.surface = surfaceMessage;
-    //mainText.texture = Message;
-    //mainText.dest = Message_rect;
-    //
-    //textAssets.push_back(mainText);
+    string fontfilePath = "assets/fonts/arial.ttf";
+
+    TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24);
+
+    SDL_Color White = { 255, 255, 255 };
+
+    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "0", White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+    
+    SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
+    
+    SDL_Rect Message_rect; //create a rect
+    Message_rect.w = 40; // controls the width of the rect
+    Message_rect.h = 40; // controls the height of the rect
+    Message_rect.x = (WIDTH / 2) - 100;  //controls the rect's x coordinate 
+    Message_rect.y = 100; // controls the rect's y coordinte
+    
+    Text player0score;
+    player0score.font = Sans;
+    player0score.color = White;
+    player0score.surface = surfaceMessage;
+    player0score.texture = Message;
+    player0score.dest = Message_rect;
+    
+    textAssets.push_back(player0score);
+
+    SDL_Rect Message_rect1; //create a rect
+    Message_rect1.w = 40; // controls the width of the rect
+    Message_rect1.h = 40; // controls the height of the rect
+    Message_rect1.x = (WIDTH / 2) + 100;  //controls the rect's x coordinate 
+    Message_rect1.y = 100; // controls the rect's y coordinte
+
+    Text player1score;
+    player1score.font = Sans;
+    player1score.color = White;
+    player1score.surface = surfaceMessage;
+    player1score.texture = Message;
+    player1score.dest = Message_rect1;
+
+    textAssets.push_back(player1score);
 
     // Cargo Sonidos y BGM
     //string soundFilePath = "assets/bgm/littleidea.mp3";
@@ -202,8 +216,6 @@ void inputUpdate() {
             default:
                 break;
             }
-
-
             break;
         case SDL_KEYUP:
             onKeyUp(event.key.keysym.sym, gameInputState);
@@ -262,11 +274,11 @@ void render()
     }
 
     // Pinto todos los textos...
-    //for (int i = 0; i < textAssets.size(); i++) {
-    //    if (textAssets[i].isVisible) {
-    //        SDL_RenderCopy(renderer, textAssets[i].texture, NULL, &textAssets[i].dest);
-    //    }
-    //}
+    for (int i = 0; i < textAssets.size(); i++) {
+        if (textAssets[i].isVisible) {
+            SDL_RenderCopy(renderer, textAssets[i].texture, NULL, &textAssets[i].dest);
+        }
+    }
     
     // Presento la imagen en pantalla
     SDL_RenderPresent(renderer);
@@ -276,23 +288,60 @@ void render()
 
 ///////// Funcione principal y GameLoop 
 
+
+
+void replaceInTextAssetForScore(int pos, int score) {
+    string tmp = to_string(score);
+    char const* scoreChar = tmp.c_str();
+
+    string fontfilePath = "assets/fonts/arial.ttf";
+
+    TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24);
+
+    SDL_Color White = { 255, 255, 255 };
+
+    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, scoreChar, White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+
+    SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
+
+    SDL_Rect Message_rect; //create a rect
+    Message_rect.w = 40; // controls the width of the rect
+    Message_rect.h = 40; // controls the height of the rect
+    if (pos == 1) Message_rect.x = (WIDTH / 2) + 100;  //controls the rect's x coordinate 
+    if (pos == 0) Message_rect.x = (WIDTH / 2) - 100;  //controls the rect's x coordinate 
+    Message_rect.y = 100; // controls the rect's y coordinte
+
+    Text scoreText;
+    scoreText.font = Sans;
+    scoreText.color = White;
+    scoreText.surface = surfaceMessage;
+    scoreText.texture = Message;
+    scoreText.dest = Message_rect;
+
+    textAssets[pos] = scoreText;
+}
+
 int p0Scores = 0;
 int p1Scores = 0;
 
 void monitorBall() {
+
     if (ball->y <= 5) ball->changeDir(ball->direction == UPRIGHT ? DOWNRIGHT : DOWNLEFT);
     if (ball->y >= HEIGHT - 5) ball->changeDir(ball->direction == DOWNRIGHT ? UPRIGHT : UPLEFT);
     
     // player0   player1
-    if (ball->x == WIDTH - 1) {
+    if (ball->x >= WIDTH - 1) {
         // player 0 scores
         p0Scores++;
+        replaceInTextAssetForScore(0, p0Scores);
+
         ball->resetBall();
     } 
     
     if (ball->x <= 0) {
         // player 1 scores
         p1Scores++;
+        replaceInTextAssetForScore(1, p1Scores);
         ball->resetBall();
     }
 
@@ -321,6 +370,8 @@ int main(int argc, char* argv[])
     Uint64 currentTime = SDL_GetTicks64();
 
     while (isGameRunning) {
+
+        
 
         Uint64 previousTime = currentTime;
 

@@ -142,24 +142,34 @@ public:
             break;
         case LEFT:
             x--;
+            x--;
             break;
         case RIGHT:
+            x++;
             x++;
             break;
         case UPLEFT:
             x--;
+            x--;
+            y--;
             y--;
             break;
         case DOWNLEFT:
             x--;
+            x--;
+            y++;
             y++;
             break;
         case UPRIGHT:
             x++;
+            x++;
+            y--;
             y--;
             break;
         case DOWNRIGHT:
             x++;
+            x++;
+            y++;
             y++;
             break;
         default:
