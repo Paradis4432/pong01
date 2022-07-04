@@ -329,6 +329,20 @@ void monitorBall() {
     if (ball->y <= 5) ball->changeDir(ball->direction == UPRIGHT ? DOWNRIGHT : DOWNLEFT);
     if (ball->y >= HEIGHT - 5) ball->changeDir(ball->direction == DOWNRIGHT ? UPRIGHT : UPLEFT);
     
+    switch (ball->direction) {
+    case LEFT:
+    case DOWNLEFT:
+    case UPLEFT:
+        if (ball->x < WIDTH / 2) {
+            if (ball->y < pallet0->y + 50) pallet0->moveUp();
+            if (ball->y > pallet0->y + 50) pallet0->moveDown();
+            spritesAssets[1].dest.y = pallet0->y;
+        }
+    default:
+        break;
+    }
+    
+
     // player0   player1
     if (ball->x >= WIDTH - 1) {
         // player 0 scores
