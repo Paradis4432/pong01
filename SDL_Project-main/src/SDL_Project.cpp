@@ -118,44 +118,53 @@ void loadAssets() {
 
     // Cargo el texto...
     string fontfilePath = "assets/fonts/arial.ttf";
-
     TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24);
-
     SDL_Color White = { 255, 255, 255 };
 
     SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "0", White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
 
     SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
 
-    SDL_Rect Message_rect; //create a rect
-    Message_rect.w = 40; // controls the width of the rect
-    Message_rect.h = 40; // controls the height of the rect
-    Message_rect.x = (WIDTH / 2) - 100;  //controls the rect's x coordinate 
-    Message_rect.y = 100; // controls the rect's y coordinte
 
-    Text player0score;
-    player0score.font = Sans;
-    player0score.color = White;
-    player0score.surface = surfaceMessage;
-    player0score.texture = Message;
-    player0score.dest = Message_rect;
+    // lamba callback to gen messages 
+    auto genMessage = [](
+        TTF_Font* font,
+        SDL_Color color,
+        SDL_Renderer* renderer,
+        string message,
+        int w,
+        int h,
+        int x,
+        int y) {
+            const char* messageChar = message.c_str();
+            SDL_Surface* messageSettings = TTF_RenderText_Solid(font, messageChar, color);
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, messageSettings);
 
-    textAssets.push_back(player0score);
+            SDL_Rect messageRect; //create a rect
+            messageRect.w = w; // controls the width of the rect
+            messageRect.h = h; // controls the height of the rect
+            messageRect.x = x;  //controls the rect's x coordinate 
+            messageRect.y = y; // controls the rect's y coordinte
 
-    SDL_Rect Message_rect1; //create a rect
-    Message_rect1.w = 40; // controls the width of the rect
-    Message_rect1.h = 40; // controls the height of the rect
-    Message_rect1.x = (WIDTH / 2) + 100;  //controls the rect's x coordinate 
-    Message_rect1.y = 100; // controls the rect's y coordinte
+            Text messageFinalSettings;
+            messageFinalSettings.font = font;
+            messageFinalSettings.color = color;
+            messageFinalSettings.surface = messageSettings;
+            messageFinalSettings.texture = texture;
+            messageFinalSettings.dest = messageRect;
 
-    Text player1score;
-    player1score.font = Sans;
-    player1score.color = White;
-    player1score.surface = surfaceMessage;
-    player1score.texture = Message;
-    player1score.dest = Message_rect1;
+            return messageFinalSettings;
+    };
 
-    textAssets.push_back(player1score);
+    //textMenuAssets.push_back(mainMenuMessage);
+    textMenuAssets.push_back(genMessage(Sans, White, renderer, "PONG", 200, 100, 500, 100));
+    textMenuAssets.push_back(genMessage(Sans, White, renderer, "Down Arrow to move down", 500, 100, 100, 200));
+    textMenuAssets.push_back(genMessage(Sans, White, renderer, "Up Arrow to move down", 500, 100, 100, 300));
+    textMenuAssets.push_back(genMessage(Sans, White, renderer, "'u' to start", 500, 100, 100, 400));
+
+
+    textAssets.push_back(genMessage(Sans, White, renderer, "0", 40, 40, (WIDTH / 2) - 100, 100));
+    textAssets.push_back(genMessage(Sans, White, renderer, "0", 40, 40, (WIDTH / 2) + 100, 100));
 
     // Cargo Sonidos y BGM
     //string soundFilePath = "assets/bgm/littleidea.mp3";
@@ -411,10 +420,7 @@ int main(int argc, char* argv[])
 
     Uint64 currentTime = SDL_GetTicks64();
 
-    while (isGameRunning) {
-
-
-
+    while (true) {
         Uint64 previousTime = currentTime;
 
         currentTime = SDL_GetTicks64();
