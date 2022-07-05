@@ -113,8 +113,6 @@ public:
     void resetBall() {
         x = centerX;
         y = centerY;
-        direction = STOP;
-        Sleep(1000);
         ranBallDir();
     }
 
