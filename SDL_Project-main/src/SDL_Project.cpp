@@ -511,7 +511,7 @@ int main(int argc, char* argv[])
             if (currentTime > lastTime + 1000) {
                 lastTime = currentTime;
                 seconds++;
-                if (seconds == 10) {
+                if (seconds == 30) {
 
                     pallet1->resetPos();
                     spritesAssets[0].dest.y = pallet1->y;
