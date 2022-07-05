@@ -130,19 +130,30 @@ void loadAssets() {
     auto genMessage = [](
         TTF_Font* font,
         SDL_Color color,
-        SDL_Renderer* renderer,
         string message,
         int w,
         int h,
         int x,
-        int y) {
+        int y,
+        boolean autoDefineTextSize) {
+
             const char* messageChar = message.c_str();
             SDL_Surface* messageSettings = TTF_RenderText_Solid(font, messageChar, color);
-            SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, messageSettings);
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(::renderer, messageSettings);
 
             SDL_Rect messageRect; //create a rect
-            messageRect.w = w; // controls the width of the rect
-            messageRect.h = h; // controls the height of the rect
+            if (autoDefineTextSize) {
+                SDL_Rect destR = { x, y, 0, 0 };
+                TTF_SizeText(font, messageChar, &destR.w, &destR.h);
+
+                messageRect.w = destR.w; // controls the width of the rect
+                messageRect.h = destR.h; // controls the height of the rect
+            }
+            else {
+                messageRect.w = w; // controls the width of the rect
+                messageRect.h = h; // controls the height of the rect
+            }
+            
             messageRect.x = x;  //controls the rect's x coordinate 
             messageRect.y = y; // controls the rect's y coordinte
 
@@ -157,14 +168,21 @@ void loadAssets() {
     };
 
     //textMenuAssets.push_back(mainMenuMessage);
-    textMenuAssets.push_back(genMessage(Sans, White, renderer, "PONG", 200, 100, 500, 100));
-    textMenuAssets.push_back(genMessage(Sans, White, renderer, "Down Arrow to move down", 500, 100, 100, 200));
-    textMenuAssets.push_back(genMessage(Sans, White, renderer, "Up Arrow to move down", 500, 100, 100, 300));
-    textMenuAssets.push_back(genMessage(Sans, White, renderer, "'u' to start", 500, 100, 100, 400));
+    textMenuAssets.push_back(genMessage(Sans, White, "PONG", 0, 0, 500, 100, true));
+    textMenuAssets.push_back(genMessage(Sans, White, "Arrows to move up and down", 0, 0, 100, 200, true));
+    textMenuAssets.push_back(genMessage(Sans, White, "' u ' to start", 0, 0, 100, 270, true));
+    textMenuAssets.push_back(genMessage(Sans, White, "' i ' for infinite mode, currently: disabled", 0, 0, 100, 340, true));
 
 
-    textAssets.push_back(genMessage(Sans, White, renderer, "0", 40, 40, (WIDTH / 2) - 100, 100));
-    textAssets.push_back(genMessage(Sans, White, renderer, "0", 40, 40, (WIDTH / 2) + 100, 100));
+
+    textAssets.push_back(genMessage(Sans, White, "0", 40, 40, (WIDTH / 2) - 100, 100, false));
+    textAssets.push_back(genMessage(Sans, White, "0", 40, 40, (WIDTH / 2) + 60, 100, false));
+
+    int x = 0; 
+    for (int i = 0; i < 36; i++) {
+        x = x + 20;
+        textAssets.push_back(genMessage(Sans, White, "|", 1, 12, WIDTH / 2, x, false));
+    }
 
     // Cargo Sonidos y BGM
     //string soundFilePath = "assets/bgm/littleidea.mp3";
