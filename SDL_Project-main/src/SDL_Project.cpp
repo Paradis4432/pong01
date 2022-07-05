@@ -36,6 +36,7 @@ SpriteAssets menuAssets;
 
 TextAssets textAssets;
 TextAssets textMenuAssets;
+TextAssets gameOverTexts;
 
 BgmAssets musicAssets;
 
@@ -47,6 +48,13 @@ GameStages gameStages;
 Ball* ball = new Ball(WIDTH / 2, HEIGHT / 2);
 Pallet* pallet0 = new Pallet(10, HEIGHT / 2);
 Pallet* pallet1 = new Pallet(WIDTH - 30, HEIGHT / 2);
+
+int p0Scores = 0;
+int p1Scores = 0;
+
+bool infMode = false;
+bool pvp = false;
+
 
 ///////// Funciones de inicializacion y destruccion /////////////
 void initEngine()
@@ -87,28 +95,66 @@ void destroyEngine() {
     SDL_Quit();
 }
 
-///////// Funciones de carga y liberacion de recursos /////////////
+// lamba callback to gen messages 
+Text genMessage(
+    string message,
+    int w,
+    int h,
+    int x,
+    int y,
+    boolean autoDefineTextSize) {
+        string fontfilePath = "assets/fonts/arial.ttf";
+        TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24);
+        SDL_Color White = { 255, 255, 255 };
 
+        const char* messageChar = message.c_str();
+        SDL_Surface* messageSettings = TTF_RenderText_Solid(Sans, messageChar, White);
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(::renderer, messageSettings);
 
+        SDL_Rect messageRect; //create a rect
+        if (autoDefineTextSize) {
+            SDL_Rect destR = { x, y, 0, 0 };
+            TTF_SizeText(Sans, messageChar, &destR.w, &destR.h);
 
-void loadIMG(string path, int x, int y, int w, int h) {
-    SDL_Texture* texture = IMG_LoadTexture(renderer, path.c_str());
-    SDL_Rect dest;
-    dest.x = x;
-    dest.y = y;
-    dest.w = w;
-    dest.h = h;
+            messageRect.w = destR.w; // controls the width of the rect
+            messageRect.h = destR.h; // controls the height of the rect
+        }
+        else {
+            messageRect.w = w; // controls the width of the rect
+            messageRect.h = h; // controls the height of the rect
+        }
 
-    Sprite sprite;
-    sprite.dest = dest;
-    sprite.texture = texture;
-    spritesAssets.push_back(sprite);
-}
+        messageRect.x = x;  //controls the rect's x coordinate 
+        messageRect.y = y; // controls the rect's y coordinte
+
+        Text messageFinalSettings;
+        messageFinalSettings.font = Sans;
+        messageFinalSettings.color = White;
+        messageFinalSettings.surface = messageSettings;
+        messageFinalSettings.texture = texture;
+        messageFinalSettings.dest = messageRect;
+
+        return messageFinalSettings;
+};
 
 void loadAssets() {
 
     int palletW = 20;
     int palletH = 100;
+
+    auto loadIMG = [](string path, int x, int y, int w, int h) {
+        SDL_Texture* texture = IMG_LoadTexture(renderer, path.c_str());
+        SDL_Rect dest;
+        dest.x = x;
+        dest.y = y;
+        dest.w = w;
+        dest.h = h;
+
+        Sprite sprite;
+        sprite.dest = dest;
+        sprite.texture = texture;
+        spritesAssets.push_back(sprite);
+    };
 
     loadIMG("assets/img/pallet.png", WIDTH - 30, HEIGHT / 2, palletW, palletH);
     loadIMG("assets/img/pallet.png", 10, HEIGHT / 2, palletW, palletH);
@@ -116,72 +162,34 @@ void loadAssets() {
 
     if (ball->direction == STOP) ball->ranBallDir();
 
-    // Cargo el texto...
-    string fontfilePath = "assets/fonts/arial.ttf";
-    TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24);
-    SDL_Color White = { 255, 255, 255 };
-
-    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "0", White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-
-    SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
-
-
-    // lamba callback to gen messages 
-    auto genMessage = [](
-        TTF_Font* font,
-        SDL_Color color,
-        string message,
-        int w,
-        int h,
-        int x,
-        int y,
-        boolean autoDefineTextSize) {
-
-            const char* messageChar = message.c_str();
-            SDL_Surface* messageSettings = TTF_RenderText_Solid(font, messageChar, color);
-            SDL_Texture* texture = SDL_CreateTextureFromSurface(::renderer, messageSettings);
-
-            SDL_Rect messageRect; //create a rect
-            if (autoDefineTextSize) {
-                SDL_Rect destR = { x, y, 0, 0 };
-                TTF_SizeText(font, messageChar, &destR.w, &destR.h);
-
-                messageRect.w = destR.w; // controls the width of the rect
-                messageRect.h = destR.h; // controls the height of the rect
-            }
-            else {
-                messageRect.w = w; // controls the width of the rect
-                messageRect.h = h; // controls the height of the rect
-            }
-            
-            messageRect.x = x;  //controls the rect's x coordinate 
-            messageRect.y = y; // controls the rect's y coordinte
-
-            Text messageFinalSettings;
-            messageFinalSettings.font = font;
-            messageFinalSettings.color = color;
-            messageFinalSettings.surface = messageSettings;
-            messageFinalSettings.texture = texture;
-            messageFinalSettings.dest = messageRect;
-
-            return messageFinalSettings;
-    };
-
     //textMenuAssets.push_back(mainMenuMessage);
-    textMenuAssets.push_back(genMessage(Sans, White, "PONG", 0, 0, 500, 100, true));
-    textMenuAssets.push_back(genMessage(Sans, White, "Arrows to move up and down", 0, 0, 100, 200, true));
-    textMenuAssets.push_back(genMessage(Sans, White, "' u ' to start", 0, 0, 100, 270, true));
-    textMenuAssets.push_back(genMessage(Sans, White, "' i ' for infinite mode, currently: disabled", 0, 0, 100, 340, true));
+    textMenuAssets.push_back(genMessage("PONG", 0, 0, 500, 100, true));
+    textMenuAssets.push_back(genMessage("Arrows to move up and down for right side player", 0, 0, 100, 200, true));
+    textMenuAssets.push_back(genMessage("W, S to move up and down for left side player", 0, 0, 100, 250, true));
+    textMenuAssets.push_back(genMessage("' u ' to start", 0, 0, 100, 350, true));
+    Text infDisabled = genMessage("' i ' to toggle infinite mode, currently: disabled", 0, 0, 100, 400, true);
+    Text infEnabled = genMessage("' i ' to toggle infinite mode, currently: enabled", 0, 0, 100, 400, true);
+    infDisabled.isVisible = true;
+    infEnabled.isVisible = false;
+    textMenuAssets.push_back(infDisabled);
+    textMenuAssets.push_back(infEnabled);
 
+    Text cpuDisabled = genMessage("' m ' to toggle cpu movement on left side, currently: disabled", 0, 0, 100, 450, true);
+    Text cpuEnabled = genMessage("' m ' to toggle cpu movement on left side, currently: enabled", 0, 0, 100, 450, true);
+    cpuDisabled.isVisible = true;
+    cpuEnabled.isVisible = false;
+    textMenuAssets.push_back(cpuDisabled);
+    textMenuAssets.push_back(cpuEnabled);
 
-
-    textAssets.push_back(genMessage(Sans, White, "0", 40, 40, (WIDTH / 2) - 100, 100, false));
-    textAssets.push_back(genMessage(Sans, White, "0", 40, 40, (WIDTH / 2) + 60, 100, false));
+    textAssets.push_back(genMessage("0", 40, 40, (WIDTH / 2) - 100, 100, false));
+    textAssets.push_back(genMessage("0", 40, 40, (WIDTH / 2) + 60, 100, false));
+    if(!infMode) textAssets.push_back(genMessage("0", 0, 0, 150, 20, true));
+    if (!infMode) textAssets.push_back(genMessage("Timer: ", 0, 0, 80, 18, true));
 
     int x = 0; 
     for (int i = 0; i < 36; i++) {
         x = x + 20;
-        textAssets.push_back(genMessage(Sans, White, "|", 1, 12, WIDTH / 2, x, false));
+        textAssets.push_back(genMessage("|", 1, 12, WIDTH / 2, x, false));
     }
 
     // Cargo Sonidos y BGM
@@ -215,8 +223,6 @@ void unloadAssets() {
 
 ///////// Funciones de actualizacion y pintado /////////////
 
-
-
 void inputUpdate() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -243,12 +249,24 @@ void inputUpdate() {
                 break;
             case SDLK_u:
                 if (gameStages.top().game_stageID == GS_MAIN_MENU) {
-                    cout << "test\n";
                     GameStage gameplay;
                     gameplay.game_stageID = GS_GAMEPLAY;
                     gameStages.push(gameplay);
                 }
+                break;
+            case SDLK_i:
+                if (!(gameStages.top().game_stageID == GS_MAIN_MENU)) continue;
 
+                textMenuAssets[4].isVisible = !textMenuAssets[4].isVisible;
+                textMenuAssets[5].isVisible = !textMenuAssets[5].isVisible;
+                infMode = !infMode;
+                break;
+            case SDLK_m:
+                if (!(gameStages.top().game_stageID == GS_MAIN_MENU)) continue;
+
+                textMenuAssets[6].isVisible = !textMenuAssets[6].isVisible;
+                textMenuAssets[7].isVisible = !textMenuAssets[7].isVisible;
+                pvp = !pvp;
                 break;
             default:
                 break;
@@ -270,34 +288,6 @@ void inputUpdate() {
     }
 }
 
-// Para ser usado en distintos contadores..
-float timer = 1.0f * 1000; // 1000 ms
-
-void updateGame(float deltaTime) {
-
-    const float BLINK_SPEED = 5.0f;
-
-    timer -= BLINK_SPEED * deltaTime;
-
-    // Small state machine using stack collection
-    /*
-    switch (gameStages.top().game_stageID ) {
-    case GS_LOGO:
-        GSLogoStateUpdate(deltaTime, resourceManager);
-        break;
-    case GS_MAIN_MENU:
-        break;
-    case GS_GAMEPLAY:
-        break;
-    case GS_INVALID:
-        break;
-    default:
-        break;
-    }
-    */
-}
-
-
 void render()
 {
     // Limpio la pantalla 
@@ -314,7 +304,6 @@ void render()
         }
         break;
     case GS_GAMEPLAY:
-        // Pinto todos los sprites...
         for (int i = 0; i < spritesAssets.size(); i++) {
             if (spritesAssets[i].isVisible) {
                 ball->move();
@@ -324,12 +313,21 @@ void render()
             }
         }
 
-        // Pinto todos los textos...
         for (int i = 0; i < textAssets.size(); i++) {
             if (textAssets[i].isVisible) {
                 SDL_RenderCopy(renderer, textAssets[i].texture, NULL, &textAssets[i].dest);
             }
         }
+        break;
+    case GS_GAMEOVER:
+        if (true) {
+            string winner = p0Scores > p1Scores ? "player 0" : p0Scores == p1Scores ? "tie" : "player 1";
+
+            gameOverTexts.push_back(genMessage(winner, 0, 0, (WIDTH / 2) - 100, 100, true));
+
+            SDL_RenderCopy(renderer, gameOverTexts[0].texture, NULL, &gameOverTexts[0].dest);
+        };
+        
         break;
     default:
         break;
@@ -344,16 +342,46 @@ void render()
 ///////// Funcione principal y GameLoop 
 
 
-
-void replaceInTextAssetForScore(int pos, int score) {
-    string tmp = to_string(score);
-    char const* scoreChar = tmp.c_str();
+void replaceInTextAssetForTimer(int seconds) {
 
     string fontfilePath = "assets/fonts/arial.ttf";
 
     TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24);
 
     SDL_Color White = { 255, 255, 255 };
+
+    string tmp = to_string(seconds);
+    char const* secondsChar = tmp.c_str();
+    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, secondsChar, White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+
+    SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
+
+    SDL_Rect Message_rect; //create a rect
+    Message_rect.w = seconds == 10 ? textAssets[2].dest.w * 2 : textAssets[2].dest.w;
+    Message_rect.h = textAssets[2].dest.h;
+    Message_rect.x = textAssets[2].dest.x;
+    Message_rect.y = textAssets[2].dest.y;
+
+    Text finalText;
+    finalText.font = Sans;
+    finalText.color = White;
+    finalText.surface = surfaceMessage;
+    finalText.texture = Message;
+    finalText.dest = Message_rect;
+
+    textAssets[2] = finalText;
+}
+
+void replaceInTextAssetForScore(int pos, int score) {
+
+    string fontfilePath = "assets/fonts/arial.ttf";
+
+    TTF_Font* Sans = TTF_OpenFont(fontfilePath.c_str(), 24);
+
+    SDL_Color White = { 255, 255, 255 };
+
+    string tmp = to_string(score);
+    char const* scoreChar = tmp.c_str();
 
     SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, scoreChar, White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
 
@@ -362,8 +390,7 @@ void replaceInTextAssetForScore(int pos, int score) {
     SDL_Rect Message_rect; //create a rect
     Message_rect.w = 40; // controls the width of the rect
     Message_rect.h = 40; // controls the height of the rect
-    if (pos == 1) Message_rect.x = (WIDTH / 2) + 100;  //controls the rect's x coordinate 
-    if (pos == 0) Message_rect.x = (WIDTH / 2) - 100;  //controls the rect's x coordinate 
+    Message_rect.x = pos == 1 ? (WIDTH / 2) + 100 : (WIDTH / 2) - 100;
     Message_rect.y = 100; // controls the rect's y coordinte
 
     Text scoreText;
@@ -376,9 +403,6 @@ void replaceInTextAssetForScore(int pos, int score) {
     textAssets[pos] = scoreText;
 }
 
-int p0Scores = 0;
-int p1Scores = 0;
-
 void monitorBall() {
 
     if (ball->y <= 5) ball->changeDir(ball->direction == UPRIGHT ? DOWNRIGHT : DOWNLEFT);
@@ -388,7 +412,7 @@ void monitorBall() {
     case LEFT:
     case DOWNLEFT:
     case UPLEFT:
-        if (ball->x < WIDTH / 2) {
+        if (ball->x < WIDTH / 2 && !pvp) {
             if (ball->y < pallet0->y + 50) pallet0->moveUp();
             if (ball->y > pallet0->y + 50) pallet0->moveDown();
             spritesAssets[1].dest.y = pallet0->y;
@@ -435,20 +459,32 @@ int main(int argc, char* argv[])
     loadAssets();
 
     //Mix_PlayMusic(musicAssets[0].music, -1);
-
-    Uint64 currentTime = SDL_GetTicks64();
+    //Uint64 currentTime = SDL_GetTicks64();
+    unsigned int lastTime = 0, currentTime, seconds = 0;
 
     while (true) {
-        Uint64 previousTime = currentTime;
-
-        currentTime = SDL_GetTicks64();
-
-        Uint64 deltaTime = currentTime - previousTime;
+        //Uint64 previousTime = currentTime;
+        //currentTime = SDL_GetTicks64();
+        //Uint64 deltaTime = currentTime - previousTime;
 
         inputUpdate();
         monitorBall();
 
-        updateGame(deltaTime * time_multiplier);
+        if (gameStages.top().game_stageID == GS_GAMEPLAY && !infMode) {
+            currentTime = SDL_GetTicks();
+            if (currentTime > lastTime + 1000) {
+                lastTime = currentTime;
+                seconds++;
+                if (seconds == 30) {
+                    GameStage finalMenu;
+                    finalMenu.game_stageID = GS_GAMEOVER;
+                    gameStages.push(finalMenu);
+                }
+                replaceInTextAssetForTimer(seconds);
+            }
+        }
+        //updateGame(deltaTime * time_multiplier);
+        
 
         render();
     }
