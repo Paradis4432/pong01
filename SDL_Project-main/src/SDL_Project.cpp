@@ -32,11 +32,16 @@ SDL_bool isGameRunning = SDL_TRUE;
 float time_multiplier = 1.0f;
 InputState gameInputState;
 SpriteAssets spritesAssets;
+SpriteAssets menuAssets;
+
 TextAssets textAssets;
+TextAssets textMenuAssets;
+
 BgmAssets musicAssets;
-GameStages gameStages;
 
 ResourceManager resourceManager;
+GameStages gameStages;
+
 
 ///////// Variables y Constantes Globales /////////////
 Ball* ball = new Ball(WIDTH / 2, HEIGHT / 2);
@@ -53,7 +58,7 @@ void initEngine()
     TTF_Init();
 
     int initted = Mix_Init(MIX_INIT_MP3);
-    if ( (initted & MIX_INIT_MP3) != MIX_INIT_MP3) {
+    if ((initted & MIX_INIT_MP3) != MIX_INIT_MP3) {
         cout << "Mix_Init: Failed to init required ogg and mod support!" << endl;
         cout << "Mix_Init: " << Mix_GetError() << endl;
         // handle error
@@ -66,15 +71,11 @@ void initEngine()
     resourceManager.spritesAssets = &spritesAssets;
     resourceManager.textAssets = &textAssets;
     resourceManager.musicAssets = &musicAssets;
-    resourceManager.gameStages = &gameStages;
     resourceManager.inputState = &gameInputState;
 
-    // Starting Game stage
-    GameStage logoGameStage;
-    logoGameStage.game_stageID = GS_GAMEPLAY;
-    logoGameStage.stage_name = "gameplay";
-
-    gameStages.push(logoGameStage);
+    GameStage mainMenu;
+    mainMenu.game_stageID = GS_MAIN_MENU;
+    gameStages.push(mainMenu);
 }
 
 void destroyEngine() {
@@ -123,22 +124,22 @@ void loadAssets() {
     SDL_Color White = { 255, 255, 255 };
 
     SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "0", White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-    
+
     SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
-    
+
     SDL_Rect Message_rect; //create a rect
     Message_rect.w = 40; // controls the width of the rect
     Message_rect.h = 40; // controls the height of the rect
     Message_rect.x = (WIDTH / 2) - 100;  //controls the rect's x coordinate 
     Message_rect.y = 100; // controls the rect's y coordinte
-    
+
     Text player0score;
     player0score.font = Sans;
     player0score.color = White;
     player0score.surface = surfaceMessage;
     player0score.texture = Message;
     player0score.dest = Message_rect;
-    
+
     textAssets.push_back(player0score);
 
     SDL_Rect Message_rect1; //create a rect
@@ -192,7 +193,7 @@ void unloadAssets() {
 void inputUpdate() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        
+
         switch (event.type) {
         case SDL_KEYDOWN:
             switch (event.key.keysym.sym)
@@ -212,6 +213,15 @@ void inputUpdate() {
             case SDLK_s:
                 pallet0->moveDown();
                 spritesAssets[1].dest.y = pallet0->y;
+                break;
+            case SDLK_u:
+                if (gameStages.top().game_stageID == GS_MAIN_MENU) {
+                    cout << "test\n";
+                    GameStage gameplay;
+                    gameplay.game_stageID = GS_GAMEPLAY;
+                    gameStages.push(gameplay);
+                }
+
                 break;
             default:
                 break;
@@ -237,11 +247,13 @@ void inputUpdate() {
 float timer = 1.0f * 1000; // 1000 ms
 
 void updateGame(float deltaTime) {
+
     const float BLINK_SPEED = 5.0f;
 
     timer -= BLINK_SPEED * deltaTime;
 
     // Small state machine using stack collection
+    /*
     switch (gameStages.top().game_stageID ) {
     case GS_LOGO:
         GSLogoStateUpdate(deltaTime, resourceManager);
@@ -251,11 +263,13 @@ void updateGame(float deltaTime) {
     case GS_GAMEPLAY:
         break;
     case GS_INVALID:
+        break;
     default:
         break;
     }
-
+    */
 }
+
 
 void render()
 {
@@ -263,23 +277,37 @@ void render()
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    // Pinto todos los sprites...
-    for (int i = 0; i < spritesAssets.size(); i++) {
-        if (spritesAssets[i].isVisible) {
-            ball->move();
-            spritesAssets[2].dest.x = ball->x;
-            spritesAssets[2].dest.y = ball->y;
-            SDL_RenderCopy(renderer, spritesAssets[i].texture, NULL, &spritesAssets[i].dest);
+    switch (gameStages.top().game_stageID)
+    {
+    case GS_MAIN_MENU:
+        for (int i = 0; i < textMenuAssets.size(); i++) {
+            if (textMenuAssets[i].isVisible) {
+                SDL_RenderCopy(renderer, textMenuAssets[i].texture, NULL, &textMenuAssets[i].dest);
+            }
         }
+        break;
+    case GS_GAMEPLAY:
+        // Pinto todos los sprites...
+        for (int i = 0; i < spritesAssets.size(); i++) {
+            if (spritesAssets[i].isVisible) {
+                ball->move();
+                spritesAssets[2].dest.x = ball->x;
+                spritesAssets[2].dest.y = ball->y;
+                SDL_RenderCopy(renderer, spritesAssets[i].texture, NULL, &spritesAssets[i].dest);
+            }
+        }
+
+        // Pinto todos los textos...
+        for (int i = 0; i < textAssets.size(); i++) {
+            if (textAssets[i].isVisible) {
+                SDL_RenderCopy(renderer, textAssets[i].texture, NULL, &textAssets[i].dest);
+            }
+        }
+        break;
+    default:
+        break;
     }
 
-    // Pinto todos los textos...
-    for (int i = 0; i < textAssets.size(); i++) {
-        if (textAssets[i].isVisible) {
-            SDL_RenderCopy(renderer, textAssets[i].texture, NULL, &textAssets[i].dest);
-        }
-    }
-    
     // Presento la imagen en pantalla
     SDL_RenderPresent(renderer);
 }
@@ -328,7 +356,7 @@ void monitorBall() {
 
     if (ball->y <= 5) ball->changeDir(ball->direction == UPRIGHT ? DOWNRIGHT : DOWNLEFT);
     if (ball->y >= HEIGHT - 5) ball->changeDir(ball->direction == DOWNRIGHT ? UPRIGHT : UPLEFT);
-    
+
     switch (ball->direction) {
     case LEFT:
     case DOWNLEFT:
@@ -341,7 +369,7 @@ void monitorBall() {
     default:
         break;
     }
-    
+
 
     // player0   player1
     if (ball->x >= WIDTH - 1) {
@@ -350,8 +378,8 @@ void monitorBall() {
         replaceInTextAssetForScore(0, p0Scores);
 
         ball->resetBall();
-    } 
-    
+    }
+
     if (ball->x <= 0) {
         // player 1 scores
         p1Scores++;
@@ -359,7 +387,7 @@ void monitorBall() {
         ball->resetBall();
     }
 
-    if (ball->x >= pallet1->x-20) {
+    if (ball->x >= pallet1->x - 20) {
         int pallet1y = pallet1->y;
         if (ball->y >= pallet1->y && ball->y <= (pallet1->y + 100)) ball->ranBalDirLeft();
     }
@@ -385,7 +413,7 @@ int main(int argc, char* argv[])
 
     while (isGameRunning) {
 
-        
+
 
         Uint64 previousTime = currentTime;
 
@@ -405,7 +433,7 @@ int main(int argc, char* argv[])
     Mix_HaltMusic();
 
     // Descargo Assets
-    unloadAssets(); 
+    unloadAssets();
     destroyEngine();
     return 0;
 }
