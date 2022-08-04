@@ -20,14 +20,14 @@ In the menu you can edit how you want to play by pressing specific keys, for exa
 
 Left side player (if AI disabled) moves using "w" and "s", Right side player moves with "Up Arrow" and "Down Arrow"
 
-![image](https://user-images.githubusercontent.com/49301263/182964718-ffae752e-4fcd-466a-a763-9a02b528dc40.png)
+![Screenshot_24](https://user-images.githubusercontent.com/49301263/182965950-97c266da-d482-47df-bce6-18f7a7408946.png)
 
 Once game started theres a timer, two pallets, a ball and a goal counter. 
 
-![image](https://user-images.githubusercontent.com/49301263/182964799-04ea2438-6e30-4ff8-afac-2ff6fd12933f.png)
+![Screenshot_25](https://user-images.githubusercontent.com/49301263/182966000-579a3993-dcbf-4061-bd31-0354712008da.png)
 
 After 30 seconds, if infinite mode is disabled, the score of each player is checked and based on how many points each player has, a winner is defined, if both players have the same score, a draw is shown. 
 
-![image](https://user-images.githubusercontent.com/49301263/182964922-e38a4be4-228f-4761-bd01-6f3288cbb28c.png)
+![Screenshot_26](https://user-images.githubusercontent.com/49301263/182966009-4c845814-4386-4c93-a12b-564d7ea41aa0.png)
 
 in this final menu, if "r" is pressed, you go back to the main menu and you can choose how to play again. 
